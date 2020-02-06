@@ -106,6 +106,10 @@ public class DemoMain extends AppCompatActivity implements ExpandableListView.On
 
 		ExpandableListView listView = findViewById(R.id.DemoListView);
 
+		Intent intent = new Intent(this,StabilizeDisplayActivity.class);
+		startActivity(intent);
+		finish();
+
 		SimpleExpandableListAdapter expListAdapter =
 				new SimpleExpandableListAdapter(
 						this,
