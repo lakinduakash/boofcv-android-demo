@@ -24,6 +24,7 @@ import java.util.List;
 import boofcv.abst.feature.detect.interest.ConfigGeneralDetector;
 import boofcv.abst.sfm.AccessPointTracks;
 import boofcv.abst.sfm.d2.ImageMotion2D;
+import boofcv.abst.sfm.d2.PlToGrayMotion2D;
 import boofcv.abst.tracker.PointTracker;
 import boofcv.alg.sfm.d2.StitchingFromMotion2D;
 import boofcv.factory.sfm.FactoryMotion2D;
@@ -31,6 +32,7 @@ import boofcv.factory.tracker.FactoryPointTracker;
 import boofcv.struct.image.GrayS16;
 import boofcv.struct.image.GrayU8;
 import boofcv.struct.image.ImageType;
+import boofcv.struct.image.Planar;
 import georegression.struct.affine.Affine2D_F64;
 import georegression.struct.homography.Homography2D_F64;
 import georegression.struct.point.Point2D_F64;
@@ -55,7 +57,7 @@ implements CompoundButton.OnCheckedChangeListener
 	Spinner spinnerView;
 
 	public StabilizeDisplayActivity() {
-		super(Resolution.LOW);
+		super(Resolution.MEDIUM);
 		super.changeResolutionOnSlow = true;
 	}
 
@@ -98,7 +100,7 @@ implements CompoundButton.OnCheckedChangeListener
 
 	@Override
 	public void createNewProcessor() {
-		StitchingFromMotion2D<GrayU8,Affine2D_F64> distortAlg =
+		StitchingFromMotion2D<Planar<GrayU8>,Affine2D_F64> distortAlg =
 				createStabilization(spinnerView.getSelectedItemPosition());
 		setProcessing(new PointProcessing(distortAlg));
 	}
@@ -107,26 +109,40 @@ implements CompoundButton.OnCheckedChangeListener
 		resetRequested = true;
 	}
 
-	static StitchingFromMotion2D<GrayU8,Affine2D_F64> createStabilization( int which ) {
+	static StitchingFromMotion2D<Planar<GrayU8>,Affine2D_F64> createStabilization( int which ) {
 
 		PointTracker<GrayU8> tracker;
 
 		if( which == 0 ) {
 			ConfigGeneralDetector config = new ConfigGeneralDetector();
 			config.maxFeatures = 200;
-			config.threshold = 40;
-			config.radius = 3;
+			config.threshold = 10;
+			config.radius = 2;
 
 			tracker = FactoryPointTracker.
-					klt(new int[]{1, 2, 4}, config, 3, GrayU8.class, GrayS16.class);
+					klt(new int[]{1, 2,4,8}, config, 3, GrayU8.class, GrayS16.class);
 		} else {
 			tracker = FactoryPointTracker.dda_FH_SURF_Fast(null,null,null,GrayU8.class);
 		}
 
-		ImageMotion2D<GrayU8,Affine2D_F64> motion = FactoryMotion2D.createMotion2D(100, 1.5, 2, 40,
-				0.5, 0.6, false, tracker, new Affine2D_F64());
 
-		return FactoryMotion2D.createVideoStitch(0.2,motion, ImageType.single(GrayU8.class));
+        ImageMotion2D<GrayU8,Affine2D_F64> motion2D =
+                FactoryMotion2D.createMotion2D(100,1.5,2,40,0.5,0.6,false,tracker,new Affine2D_F64());
+
+        // wrap it so it output color images while estimating motion from gray
+        ImageMotion2D<Planar<GrayU8>,Affine2D_F64> motion2DColor =
+                new PlToGrayMotion2D<>(motion2D, GrayU8.class);
+
+        // This fuses the images together
+        StitchingFromMotion2D<Planar<GrayU8>,Affine2D_F64>
+                stabilize = FactoryMotion2D.createVideoStitch(0.01, motion2DColor,ImageType.pl(3,GrayU8.class));
+
+        return stabilize;
+
+//		ImageMotion2D<GrayU8,Affine2D_F64> motion = FactoryMotion2D.createMotion2D(100, 1.5, 2, 40,
+//				0.5, 0.6, false, tracker, new Affine2D_F64());
+//
+//		return FactoryMotion2D.createVideoStitch(0.01,motion, ImageType.single(GrayU8.class));
 	}
 
 	@Override
@@ -134,8 +150,8 @@ implements CompoundButton.OnCheckedChangeListener
 		showFeatures = b;
 	}
 
-	protected class PointProcessing extends DemoProcessingAbstract<GrayU8> {
-		StitchingFromMotion2D<GrayU8,Affine2D_F64> alg;
+	protected class PointProcessing extends DemoProcessingAbstract<Planar<GrayU8>> {
+		StitchingFromMotion2D<Planar<GrayU8>,Affine2D_F64> alg;
 		Homography2D_F64 imageToDistorted = new Homography2D_F64();
 		Homography2D_F64 distortedToImage = new Homography2D_F64();
 
@@ -148,8 +164,8 @@ implements CompoundButton.OnCheckedChangeListener
 
 		float radius;
 
-		public PointProcessing( StitchingFromMotion2D<GrayU8,Affine2D_F64> alg  ) {
-			super(ImageType.single(GrayU8.class));
+		public PointProcessing( StitchingFromMotion2D<Planar<GrayU8>,Affine2D_F64> alg  ) {
+			super(ImageType.pl(3,GrayU8.class));
 			this.alg = alg;
 		}
 
@@ -193,7 +209,7 @@ implements CompoundButton.OnCheckedChangeListener
 		}
 
 		@Override
-		public void process(GrayU8 gray) {
+		public void process(Planar<GrayU8> gray) {
 			if( !resetRequested && alg.process(gray) ) {
 				convertToBitmapDisplay(alg.getStitchedImage());
 				synchronized ( lockGui ) {
