@@ -17,7 +17,7 @@
         android:name="org.boofcv.android.DemoApplication"
         android:allowBackup="true"
         android:hardwareAccelerated="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:background="#111111"
@@ -25,7 +25,7 @@
         android:usesCleartextTraffic="true">
         <activity
             android:name=".DemoMain"
-            android:label="">
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
