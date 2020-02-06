@@ -30,6 +30,7 @@ import boofcv.android.ConvertBitmap;
 import boofcv.misc.BoofMiscOps;
 import boofcv.struct.image.GrayU8;
 import boofcv.struct.image.ImageType;
+import boofcv.struct.image.Planar;
 import georegression.struct.affine.Affine2D_F64;
 import georegression.struct.homography.Homography2D_F64;
 import georegression.struct.point.Point2D_F64;
@@ -104,9 +105,9 @@ implements CompoundButton.OnCheckedChangeListener
 
 	@Override
 	public void createNewProcessor() {
-		StitchingFromMotion2D<GrayU8,Affine2D_F64> distortAlg =
+		StitchingFromMotion2D<Planar<GrayU8>,Affine2D_F64> distortAlg =
 				createStabilization(spinnerView.getSelectedItemPosition());
-		setProcessing(new PointProcessing(distortAlg));
+		//setProcessing(new PointProcessing(distortAlg));
 	}
 
 	public void resetPressed(View view ) {
