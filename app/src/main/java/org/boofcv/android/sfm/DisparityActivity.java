@@ -38,6 +38,7 @@ import org.ejml.data.DMatrixRMaj;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -740,9 +741,12 @@ public class DisparityActivity extends DemoCamera2Activity
 				PointCloud3D cloud = cloudView.getRenderer().getCloud();
 				int totalPoints = cloud.points.size/3;
 				OutputStream output = new FileOutputStream(new File(savePath, "point_cloud.ply"));
+
+				OutputStreamWriter osw = new OutputStreamWriter(output);
+
 				PointCloudIO.save3D(PointCloudIO.Format.PLY_BINARY,
 						PointCloudReader.wrap3FRGB(cloud.points.data,cloud.colors.data,0,totalPoints),
-						true,output);
+						true,osw);
 				output.close();
 				runOnUiThread(() -> saveDialog.setProgress(8));
 			} catch( Exception e ) {

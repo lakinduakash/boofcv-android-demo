@@ -570,13 +570,14 @@ public abstract class DemoCamera2Activity extends VisualizeCamera2Activity {
         if( intrinsic == null ) {
             intrinsic = new CameraPinholeBrown();
             // Not sure why this happens but gracefully exit if it does
-            if( !cameraIntrinsicNominal(intrinsic) ) {
-                ACRA.getErrorReporter().handleSilentException(new Exception("cameraIntrinsicNominal() failed!"));
-                runOnUiThread(()->{
-                    finish(); // leave the activity
-                    Toast.makeText(this,"Error: Can't access camera size. Try again.",Toast.LENGTH_LONG).show();
-                });
-            }
+            cameraIntrinsicNominal(intrinsic);
+//            if( !cameraIntrinsicNominal(intrinsic) ) {
+//                ACRA.getErrorReporter().handleSilentException(new Exception("cameraIntrinsicNominal() failed!"));
+//                runOnUiThread(()->{
+//                    finish(); // leave the activity
+//                    Toast.makeText(this,"Error: Can't access camera size. Try again.",Toast.LENGTH_LONG).show();
+//                });
+//            }
         }
         return intrinsic;
     }
